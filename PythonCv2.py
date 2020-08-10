@@ -8,7 +8,7 @@ def save_img(videofilepath,originpath):
     else:
         rval = False
 
-    timeF=1  #由于视频帧数过多 用此变量作为测试使用 正常使用时值为 1
+    timeF = 1  # 由于视频帧数过多 用此变量作为测试使用 正常使用时值为 1
 
     while rval:
         rval,frame=vc.read()
