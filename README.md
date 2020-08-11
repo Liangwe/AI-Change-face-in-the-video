@@ -35,17 +35,24 @@ def read_im_and_landmarks(fname):
     return im, s
 ```
 已经训练好的模型路径：（下载路径在上文）
-```PREDICTOR_PATH = "shape_predictor_68_face_landmarks.dat"```
+```python
+PREDICTOR_PATH = "shape_predictor_68_face_landmarks.dat"
+```
 
 人脸检测器：
-```detector = dlib.get_frontal_face_detector()```
+```python
+detector = dlib.get_frontal_face_detector()
+```
 预测器：
-```predictor = dlib.shape_predictor(PREDICTOR_PATH)```
+```python
+predictor = dlib.shape_predictor(PREDICTOR_PATH)
+```
 
 预测大致人脸：
 预测器需要粗略的边界框作为算法的输入，这是由检测器提供的，该检测器返回矩形列表，每个矩形对应图像中的面部，代码如下：
 
-```def get_landmarks(im):
+```python
+def get_landmarks(im):
     rects = detector(im, 1)
     if len(rects) > 1:
         raise TooManyFaces
@@ -56,7 +63,8 @@ def read_im_and_landmarks(fname):
 
 2.用 Procrustes 分析调整脸部：
 现在我们已经有了两个标记矩阵，每行有一组坐标对应一个特定的面部特征（如第30行的坐标对应于鼻头）。我们现在要解决如何旋转、翻译和缩放第一个向量，使它们尽可能适配第二个向量的点。一个想法是可以用相同的变换在第一个图像上覆盖第二个图像，其实最终是一个正交矩阵的解决办法，代码如下：（参考文档，维基百科）
-```def transformation_from_points(points1, points2):
+```python
+def transformation_from_points(points1, points2):
     points1 = points1.astype(numpy.float64)
     points2 = points2.astype(numpy.float64)
     c1 = numpy.mean(points1, axis=0)
@@ -86,7 +94,7 @@ def read_im_and_landmarks(fname):
 	两幅图像之间不同的肤色和光线造成了覆盖区域的边缘不连续，若无此步，则制作的图片色彩不均匀。
 此函数试图改变 im2（第二张图） 的颜色来适配 im1。它通过用 im2 除以 im2 的高斯模糊值，然后乘以im1的高斯模糊值。代码如下：
 
-```
+```python
 def correct_colors(im1, im2, landmarks1,landmarks2): #修改
     blur_amount = COLOUR_CORRECT_BLUR_FRAC * numpy.linalg.norm(
         numpy.mean(landmarks1[LEFT_EYE_POINTS], axis=0) -
@@ -104,7 +112,8 @@ def correct_colors(im1, im2, landmarks1,landmarks2): #修改
 	
 4、第二张图特征混合在第一张图
 
-```def get_face_mask(im, landmarks):
+```python
+def get_face_mask(im, landmarks):
     im = numpy.zeros(im.shape[:2], dtype=numpy.float64)
     for group in OVERLAY_POINTS:
         draw_convex_hull(im,
