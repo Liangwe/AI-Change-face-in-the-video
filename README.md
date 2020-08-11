@@ -26,35 +26,37 @@ trump.mp4为被更换的视频，大家如果改换视频的话，代码中视�
 
 1、检测脸部标记:（准备工作）
 	读取图片：
-`def read_im_and_landmarks(fname):
+```python
+def read_im_and_landmarks(fname):
     im = cv2.imread(fname, cv2.IMREAD_COLOR)
     im = cv2.resize(im, (im.shape[1] * SCALE_FACTOR,
                          im.shape[0] * SCALE_FACTOR))
     s = get_landmarks(im)
-return im, s`
-
+    return im, s
+```
 已经训练好的模型路径：（下载路径在上文）
-`PREDICTOR_PATH = "shape_predictor_68_face_landmarks.dat"`
+```PREDICTOR_PATH = "shape_predictor_68_face_landmarks.dat"```
 
 人脸检测器：
-`detector = dlib.get_frontal_face_detector()`
+```detector = dlib.get_frontal_face_detector()```
 预测器：
-`predictor = dlib.shape_predictor(PREDICTOR_PATH)`
+```predictor = dlib.shape_predictor(PREDICTOR_PATH)```
 
 预测大致人脸：
 预测器需要粗略的边界框作为算法的输入，这是由检测器提供的，该检测器返回矩形列表，每个矩形对应图像中的面部，代码如下：
 
-`def get_landmarks(im):
+```def get_landmarks(im):
     rects = detector(im, 1)
     if len(rects) > 1:
         raise TooManyFaces
     if len(rects) == 0:
         raise NoFaces
-    return numpy.matrix([[p.x, p.y] for p in predictor(im, rects[0]).parts()])`
+    return numpy.matrix([[p.x, p.y] for p in predictor(im, rects[0]).parts()])
+```
 
 2.用 Procrustes 分析调整脸部：
 现在我们已经有了两个标记矩阵，每行有一组坐标对应一个特定的面部特征（如第30行的坐标对应于鼻头）。我们现在要解决如何旋转、翻译和缩放第一个向量，使它们尽可能适配第二个向量的点。一个想法是可以用相同的变换在第一个图像上覆盖第二个图像，其实最终是一个正交矩阵的解决办法，代码如下：（参考文档，维基百科）
-`def transformation_from_points(points1, points2):
+```def transformation_from_points(points1, points2):
     points1 = points1.astype(numpy.float64)
     points2 = points2.astype(numpy.float64)
     c1 = numpy.mean(points1, axis=0)
@@ -69,7 +71,8 @@ return im, s`
     R = (U * Vt).T
     return numpy.vstack([numpy.hstack(((s2 / s1) * R,
                                        c2.T - (s2 / s1) * R * c1.T)),
-                         numpy.matrix([0., 0., 1.])])`
+                         numpy.matrix([0., 0., 1.])])
+```
 
 代码实现了这几步：
 1.将输入矩阵转换为浮点数。这是后续操作的基础。
@@ -83,7 +86,8 @@ return im, s`
 	两幅图像之间不同的肤色和光线造成了覆盖区域的边缘不连续，若无此步，则制作的图片色彩不均匀。
 此函数试图改变 im2（第二张图） 的颜色来适配 im1。它通过用 im2 除以 im2 的高斯模糊值，然后乘以im1的高斯模糊值。代码如下：
 
-`def correct_colors(im1, im2, landmarks1,landmarks2): #修改
+```
+def correct_colors(im1, im2, landmarks1,landmarks2): #修改
     blur_amount = COLOUR_CORRECT_BLUR_FRAC * numpy.linalg.norm(
         numpy.mean(landmarks1[LEFT_EYE_POINTS], axis=0) -
         numpy.mean(landmarks2[RIGHT_EYE_POINTS], axis=0))
@@ -96,11 +100,11 @@ return im, s`
     im2_blur += (128 * (im2_blur <= 1.0)).astype(im2_blur.dtype)
     return (im2.astype(numpy.float64) * im1_blur.astype(numpy.float64) /
             im2_blur.astype(numpy.float64))
-`
+```
 	
 4、第二张图特征混合在第一张图
 
-`def get_face_mask(im, landmarks):
+```def get_face_mask(im, landmarks):
     im = numpy.zeros(im.shape[:2], dtype=numpy.float64)
     for group in OVERLAY_POINTS:
         draw_convex_hull(im,
@@ -109,7 +113,8 @@ return im, s`
     im = numpy.array([im, im, im]).transpose((1, 2, 0))
     im = (cv2.GaussianBlur(im, (FEATURE_AMOUNT, FEATURE_AMOUNT), 0) > 0) * 1.0
     im = cv2.GaussianBlur(im, (FEATURE_AMOUNT, FEATURE_AMOUNT), 0)
-    return im`
+    return im
+```
 
 get_face_mask()的定义是为一张图像和一个标记矩阵生成一个遮罩，它画出了两个白色的凸多边形：一个是眼睛周围的区域，一个是鼻子和嘴部周围的区域。之后它由11个像素向遮罩的边缘外部羽化扩展，可以帮助隐藏任何不连续的区域。最终返回优化过后的图像。
 
