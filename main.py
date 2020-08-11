@@ -1,6 +1,6 @@
 from transfer import *
 from newvideo import mergevideo
-from PythonCv2 import save_img
+from PythonCv2 import video2img
 from deletecache import del_file
 
 import os 
@@ -11,18 +11,15 @@ originpath = 'origin/'
 transferpath = 'transfer/'  #原始帧的路径和转换后帧的路径 一定要加 / 
 videofilepath = 'trump.mp4'    #文件路径可自己定义
 
-save_img(videofilepath,originpath)
+video2img(videofilepath,originpath)
 
 print('视频的每一帧分离完成，开始转换')
 filelist=os.listdir(originpath)
 num = len(filelist)
 
-os.remove(originpath + str(num) +'.jpg')
-#删除最后一个乱码帧  不知道为啥会出现这样的帧 ...
-
 newlist = os.listdir(originpath)
 
-print('视频一共有：'+ str(num-1) + '帧')
+print('视频一共有：'+ str(num) + '帧')
 
 im2, landmarks2 = read_im_and_landmarks("1.jpg")  #人物模型，将要替换到视频中的人
                                             #在同级目录下，如果更换，请定义路径
