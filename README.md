@@ -1,6 +1,6 @@
 # AI-Change-face-in-the-video
 **准备和摘要**
-将视频中的人脸更换为指定照片中的人脸，并且输出视频。参考[传送门](https://github.com/matthewearl/faceswap/blob/master/faceswap.py)
+将视频中的人脸更换为指定照片中的人脸，并且输出视频。项目参考->[传送门](https://github.com/matthewearl/faceswap/blob/master/faceswap.py)
 
 Dlib的安装  pip install dlib==19.6.1  这种最简单
 
